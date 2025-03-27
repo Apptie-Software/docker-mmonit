@@ -74,7 +74,7 @@ You can set a custom port with `MONIT_PORT`
 | ---        | --------                                |
 | MMONIT_PORT=8080  | 8080 is the default port, you can set your own. |
 | MMONIT_DOMAIN=  | domain/subdomain path of M/Monit |
-| MMONIT_URL=  | full url on which M/Monit would be reached |
+| MMONIT_URL=  | full url on which M/Monit would be reached (constructed from MMONIT_DOMAIN) |
 | MMONIT_VERSION=4.3.4  | 4.3.4 is the latest version at the moment of writing, you can set your own. |
 | MMONIT_DATABASE_URL=  | full url for a database connection other than SQLite |
 | MMONIT_LICENSE_OWNER=  | M/Monit license owner |
@@ -87,35 +87,24 @@ You can set a custom port with `MONIT_PORT`
 
 | Volume  | Function                         |
 | ------  | --------                         |
-| /etc/monit/config | All the config files reside here |
+| /opt/mmonit-{version}/conf | All the config files reside here |
 
 ## Setup
 
-- If provided, Monit configuration is assembled from config files found in `<config>`.
+If your M/Monit is behind a proxy, you'd need to configure the `<Engine>` and `<Connector>` options further, i.e.:
 
-- Otherwise, the configuration will be generated based on existing environment variables.
+```yml
+<Connector address="*" port="8080" processors="10" proxyScheme="https" proxyName="subdomain.domain.xyz" proxyPort="443" />
 
->[!IMPORTANT]
-> `MMONIT_URL`, `MMONIT_USERNAME`, and `MMONIT_PASSWORD` are
-> ***required*** to generate config files.
+<Engine name="mmonit" defaultHost="subdomain.domain.xyz" fileCache="10MB">
 
-### `/etc/monit/config/httpd.cfg`
+<!-- ... -->
 
-`NETWORK` and `NETMASK` are those of the container.
-
-```cfg
-set httpd port ${MONIT_PORT}
-    allow localhost
-    allow "::1"
-    allow ${NETWORK}/${NETMASK}
-    allow ${MMONIT_USERNAME}:${MMONIT_PASSWORD}
+</Engine>
 ```
 
-### `/etc/monit/config/mmonit.cfg`
-
-```cfg
-set monit ${MMONIT_URL}
-```
+>[!NOTE]
+> The `proxyName` attribute in the `<Connector>` and the `defaultHost` attribute in the `<Engine>` **have to be the same**.
 
 ## TODO
 
