@@ -1,0 +1,511 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+                       M/Monit configuration file
+
+-->
+
+<!--
+  The Server element represents the entire Servlet Container and is the single
+  outermost element in the configuration file. Only one Service element may be
+  nested inside a Server element
+ -->
+<Server>
+
+  <!--
+    A Service element represents the combination of one or more Connector
+    components that share a single Engine component for processing incoming
+    requests. The only components that may be nested inside a Service element
+    are one or more Connector elements, followed by exactly one Engine element.
+  -->
+  <Service>
+
+    <!--
+      The Connector element represents a Connector component that supports the
+      HTTP/1.1 protocol. It enables the Servlet Container to function as a
+      stand-alone web server, in addition to its ability to execute servlets. A
+      particular instance of this component listens for connections on a
+      specific TCP port number on the server. One or more such Connectors can
+      be configured as part of a single Service, each forwarding to the
+      associated Engine to perform request processing and create the response.
+
+      At server startup time, the Connector will create a pool of servlet
+      request processing threads. The maximum number of threads in the pool is
+      specified by the attribute; processors. Each incoming servlet request
+      requires a thread for processing. Usually, only CPU bound operations are
+      performed in the servlet thread, while a separate thread handle i|o bound
+      operations for all servlet requests and responses. Recommended settings
+      for the processor attribute is 25 or the number of CPU cores on the
+      system if that number is higher.
+
+      If more simultaneous servlet requests are received than can be handled by
+      the currently available thread pool, requests are queued up inside the
+      Connector, up to the systems maximum available descriptors and when a
+      processor thread becomes available it will immediately start to consume
+      requests from the queue.
+
+      The attribute, processorTimeout sets the number of seconds a processor
+      thread will wait for more work before timeout. The Connector increase and
+      reduce the number of processor threads available depending on the work
+      load. The default timeout value is 30 seconds.
+
+      The attribute, connectionTimeout specify the number of seconds a
+      Connector will wait, after accepting a connection, for the client to send
+      a HTTP request. The default value is 30 seconds.
+
+      The attributes, address and port, specify respectively the network
+      interface M/Monit binds to and the port number M/Monit listen to for
+      incoming connections. Address may be specified as an IP address string,
+      as a host name or you can use '*' to bind to all available interfaces.
+
+      The attribute ipversion specify the IP-version the Connector should use.
+      If not specified, IP-version 4 will be used. To support both IPv4 and
+      IPv6, specify two Connectors, one setting ipversion to 4 and the other
+      setting ipversion to 6.
+
+      By default, a non-SSL HTTP/1.1 Connector is established on port 8080. You
+      may also enable a SSL HTTP/1.1 Connector on port 8443 by uncommenting the
+      second Connector entry. To make a Connector secure and use SSL, set the
+      secure attribute to true. The Container will use TLSv1.2 or later unless
+      specified with the tls attribute. In addition, each virtual Host below
+      must specify a certificate file to be used for that specific Host. It is
+      possible to run the Container with both a secure Connector using SSL and
+      a non-secure Connector.
+
+      The ciphers attribute can optional be used to explicit set the list of
+      OpenSSL ciphers to use when SSL is active. If not set, a default cipher
+      list is used which in most cases is "good enough". For TLS 1.2, it's
+      crucial to exclude weak or outdated cipher suites to maintain strong
+      security. For TLS 1.3, the protocol itself takes care of selecting secure
+      cipher suites and if you only plan to use version 1.3, setting your own
+      are no longer considered necessary.
+
+      The tls attribute can optionally be used to specify the TLS version
+      number. This attribute specify a range from the minimum version number to
+      the maximum version number. If not specified, TLS version 1.2 or later
+      will be used. The general format of the tls attribute string is [min:max]
+      where min and max are TLS version numbers. For instance [1.2:1.3] which
+      means support for TLS version 1.2 to 1.3. Both min and max are optional.
+      E.g. [TLS 1.2:] which means support TLS version 1.2 to the highest
+      version supported by the ssl library. You can also use an exact version
+      string like "TLS version 1.3" or simply "1.3" which means that the
+      Connector will only support TLS version 1.3. Any attempt to connect with
+      a different version will be denied. Note that the minimum TLS version
+      supported by M/Monit is version 1.2. Any SSL version or TLS version 1.0
+      and 1.1 are not supported and will result in an error if specified here.
+
+      By default, DNS lookup is disabled and the Access Logger will log the IP
+      address instead of the host name. You can enable DNS lookup by setting
+      the enableLookups attribute to "true", but notice that DNS lookups will
+      have an adverse impact on performance if you use an Access Logger.
+    -->
+    <Connector address="*" port="${MMONIT_PORT}" processors="25" />
+
+    <!--
+      Define a SSL/TLS HTTP/1.1 Connector on port 8443.
+
+      SSL/TLS configuration checklist:
+        1. Add the <Connector> element with secure="true" (uncomment the
+           example with port 8443 below)
+        2. Set the <Engine defaultHost="..."> attribute to the host name,
+           matching the one in the SSL certificate
+        3. Set the <Host name="..."> attribute to the host name, matching the
+           one in the SSL certificate
+        4. Add SSL certificates to the <Host>
+    -->
+    <!--
+    <Connector address="*" port="8443" processors="25" secure="true" tls="[1.2:]"/>
+    -->
+
+    <!--
+      Define a Connector for using a HTTPS proxy in-front of M/Monit
+    -->
+    <!--
+    <Connector address="*" port="8080" processors="25" proxyScheme="https"
+        proxyName="proxy.server.name" proxyPort="443" />
+    -->
+
+    <!--
+      The Engine element represents the entire request processing machinery
+      associated with a particular Service. It receives and processes all
+      requests from one or more Connectors, and returns the completed response
+      to the Connector for ultimate transmission back to the client. Exactly
+      one Engine element MUST be nested inside a Service element.
+
+      The Host defined in the defaultHost attribute is used to process Requests
+      directed at Virtual Hosts not configured in this configuration file. The
+      default Host will also handle HTTP/1.0 based requests without a Host
+      header. When you use SSL/TLS, the defaultHost should match the host name
+      in the SSL certificate.
+
+      The fileCache attribute is used to set the file cache size for the
+      Engine. The Engine cache static files to speed up transmission. The
+      default size is 10 MB. You can disabled the cache by setting fileCache to
+      0. Disabling the file cache is strongly advised against for production
+      systems
+
+      You can nest one or more Host elements inside the Engine element, each
+      representing a different virtual host associated with this server. At
+      least one Host is required, and one of the nested Hosts MUST have a name
+      that matches the name specified for the defaultHost attribute, mentioned
+      above.
+
+      You can also nest at most one instance of the following utility
+      components inside an Engine element:
+
+       * Realm - The security realm database used to authenticate individual
+         users and store persistent sessions. The Realm database is also used
+         by M/Monit to store its data.
+
+       * ErrorLogger - Configure an error logger that is used by the Server to
+         dump error and warning messages.
+    -->
+            <Engine name="mmonit" defaultHost="${MMONIT_DOMAIN}" fileCache="10 MB">
+
+      <!--
+        The Realm element specify the database to be used by M/Monit and the
+        underlying security realm to authenticate individual users and to store
+        application specific data. If the Realm database is not defined,
+        M/Monit will not start and abort its operation.
+
+        Connections from M/Monit to the Realm database are maintained by a
+        database Connection Pool. The url attribute specify the connection to
+        the database server on a standard URL format. The format of the
+        connection URL is defined as:
+
+        database://[user:password@][host][:port]/database[?[property1
+        =value1][&property2=value2]...]
+
+        Properties depends on the database server in question (see below). If
+        port number is omitted, the default port number for the database server
+        is used. The password should be URL encoded if it contains URL unsafe
+        characters.
+
+        See all properties that can be set for a mysql connection URL:
+        https://tildeslash.com/libzdb/api-docs/mysqloptions.html and PostgreSQL
+        properties: https://tildeslash.com/libzdb/api-docs/postgresoptions.html
+
+        The optional attributes, minConnections and maxConnections, specify
+        respectively, the minimum number of concurrent available connection and
+        the maximum number of database connections that can be created. The
+        pool will dynamically increase and reduce the number of active
+        Connections in the pool between minConnections and maxConnections
+        depending on the load.
+
+        If not set, minConnections is 5 and maxConnections is 20.
+
+        The attribute reapConnections specify if the Connection Pool should run
+        a reaper thread, which will close and remove unused Connections from
+        the Pool. The value is sweep time in seconds. I.e. the reaper thread
+        will sleep for reapConnections seconds, wake up, clean up the pool if
+        necessary and go back to sleep. If this attribute is not set, the
+        Connection Pool will not start with a reaper thread.
+
+        The location of the default SQLite Realm database may be given as an
+        absolute or relative path. If relative, the absolute path is computed
+        relative to M/Monit home.
+
+        As mentioned above, instead of SQLite you may use MySQL or PostgreSQL
+        as demonstrated in the commented out Realms below.
+
+        Notice for MySQL Users:
+
+        If you need to connect over TCP on localhost, use 127.0.0.1, otherwise
+        if the host name is localhost, connection to MySQL is attempted via a
+        unix socket. The default location for the socket file is
+        /tmp/mysql.sock. If located elsewhere, use the unix-socket property to
+        specify the location.
+                  
+        Only one Realm database should be defined in this file.
+      -->
+      <Realm url="${MMONIT_DATABASE_URL}"
+             minConnections="5"
+             maxConnections="25"
+             reapConnections="300" />
+      <!--
+      <Realm url="mysql://mmonit:mmonit@127.0.0.1/mmonit"
+             minConnections="5"
+             maxConnections="25"
+             reapConnections="300" />
+      <Realm url="postgresql://mmonit:mmonit@127.0.0.1:5432/mmonit?connect-timeout=5"
+             minConnections="5"
+             maxConnections="25"
+             reapConnections="300" />
+      -->
+
+      <!--
+        The global error logger for the Engine. Only one ErrorLogger is
+        permitted.
+      -->
+      <ErrorLogger directory="logs" fileName="error.log" rotate="month" />
+
+      <!--
+        The Host element represents a virtual host, which is an association of
+        a network name for a server (such as "www.example.com" with the
+        particular server on which M/Monit is running. This name must be
+        registered in the Domain Name Service (DNS) server that manages the
+        Internet domain you belong to - contact your Network Administrator for
+        more information. If you use SSL/TLS, the name has to match the host
+        name in the SSL certificate.
+
+        In many cases, System Administrators will wish to associate more than
+        one network name (such as www.example.com and example.com) with the
+        same virtual host. This can be accomplished by using the alias
+        attribute. You may add as many Host aliases as you like, but note that
+        a Host alias must also be a valid DNS name.
+
+        The appBase attribute defines the application root directory for the
+        Host. This directory may contain web applications to be deployed on
+        this virtual host.
+
+        The certificate attribute is used to specify the SSL certificate for
+        the Host. Certificates must be in the PEM format and the file must
+        contain the following entries in this order: The Host certificate and
+        the certificate of the authority that signed the Host certificate. Use
+        the certificateKey attribute to specify the Host certificate's private
+        key, also in PEM format. Alternatively, you can add the private key to
+        the start of the certificate file and not use the certificateKey
+        attribute.
+
+        If you use Let's Encrypt, you will receive two files which should be
+        configure as follows: certificate="fullchain.pem"
+        certificateKey="privkey.pem"
+
+        If you don't already have a SSL certificate you can create a
+        self-signed certificate yourself using this OpenSSL command:
+
+        openssl req -new -newkey rsa:2048 -x509 -days 365 -nodes \
+        -out mmonit.pem -keyout mmonit.pem
+
+        The certificate file can be placed in 'conf/' and the certificate
+        attribute for <Host> should be specified like so:
+        certificate="conf/mmonit.pem". In this case the private key is embedded
+        in "mmonit.pem" so no need to specify certificateKey.
+
+        You can nest one or more Context elements inside the Host element, each
+        representing a different web application associated with the virtual
+        host.
+
+        You can also nest at most one instance of the following utility
+        components by nesting a corresponding element inside your Host element:
+
+        * AccessLogger - When you run a web server, one of the output files
+                         normally generated is an access log, which generates
+                         one line of information for each request processed by
+                         the server, in a standard format.
+
+        * Logger       - A Logger shared by all Contexts related to this virtual
+                         host. The Logger will process all log messages for a
+                         Host, plus messages from Contexts and Servlets
+                         associated with the Host.
+          
+        * SSLClientConfig - Configure outbound TLS connections for the application
+      -->
+      <!--
+        Define the default virtual host which name must match the Engine
+        defaultHost attribute
+      -->
+      <Host name="${MMONIT_DOMAIN}" appBase=".">
+
+        <!--
+          Configure outbound TLS connections for the application
+        -->
+        <!--
+        <SSLClientConfig>
+        -->
+          <!--
+            SelfSignedCertificate:
+            Controls the acceptance of self-signed SSL certificates for
+            outbound TLS connections.
+            - allow (attribute): Specifies whether to allow (true) or disallow
+              (false) connections to servers with self-signed certificates.
+            Default: false (disallow). Omitting this element also defaults to
+            disallow.
+          -->
+        <!--
+          <SelfSignedCertificate allow="false" />
+          -->
+
+          <!--
+            CipherSuites:
+            Specifies the list of cipher suites to be used for outbound TLS
+            connections. The format follows the one used in OpenSSL
+            Note: For TLS 1.3, it is generally not necessary to specify cipher
+            suites because the protocol maintains a small, secure selection of
+            ciphers. Specifying cipher suites is more relevant for TLS 1.2 and
+            earlier versions to ensure the use of secure ciphers and to exclude
+            weak ones. Omitting this element defaults to a suites that focus on
+            security and compatibility. (The one commented out below).
+          -->
+          <!--
+          <CipherSuites>
+              ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:
+              ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:
+              TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:
+              TLS_CHACHA20_POLY1305_SHA256:!aNULL:!eNULL:!LOW:!EXP:!RC4:
+              !3DES:!MD5:!PSK:!SRP:!DSS:!SHA1:!SSLv3:@SECLEVEL=1:@STRENGTH
+          </CipherSuites>
+          -->
+
+          <!--
+            Protocols:
+            Defines the TLS protocol versions to be enabled for outbound
+            connections.
+            - versions (attribute): The format of the versions string is the
+              same as the tls attribute in <Connector> above.
+            Example: "[TLSv1.2:TLSv1.3]"
+            Note: Only TLS version 1.2 and 1.3 are supported.
+            Default: [1.2:]. Omitting this element also defaults to
+            1.2 and 1.3.
+          -->
+          <!--
+          <Protocols versions="[TLS1.2:]" />
+          -->
+
+          <!--
+              HostnameVerification:
+              Determines whether hostname verification is enabled for outbound
+              TLS connections.
+              - enable (attribute): Set to true to enforce hostname
+                verification, ensuring the server's certificate hostname
+                matches the requested hostname. Set to false to disable
+                verification.
+              Default: true (enabled). Disabling hostname verification can
+              introduce security vulnerabilities and should be used with
+              caution. Omitting this element also defaults to true.
+          -->
+          <!--
+          <HostnameVerification enable="true" />
+          -->
+
+          <!--
+            ClientCertificate:
+            Specifies the path to the client certificate and key, used for
+            mutual TLS authentication in outbound connections.
+            - path (attribute): An absolute file path to the client's
+              certificate (PEM format required).
+            - keyPath (attribute): An absolute file path to the client's
+              private key.
+            Note: Both attributes are required for mutual TLS. Omitting this
+            element defaults to ClientCertificate not beeing used.
+          -->
+          <!--
+          <ClientCertificate path="/path/to/cert" keyPath="/path/to/key" />
+          -->
+
+          <!--
+            CACertificatePath:
+            Specifies the file or directory path containing CA certificates
+            used to verify server certificates for outbound TLS connections.
+            - path (attribute): An absolute path to a file or directory holding
+              one or more CA certificates (PEM format required).
+            Note: Use this setting to override the default CA certificate store
+            of the SSL library or to provide additional trusted CAs.
+          -->
+          <!--
+          <CACertificatePath path="/path/to/ca/certs" />
+          -->
+
+          <!--
+            HandshakeTimeout:
+            Defines the timeout for the TLS handshake process in outbound
+            connections, specified in milliseconds.
+            - value (attribute): Timeout duration in milliseconds or seconds.
+            Default: 3000 (3 seconds). Adjust based on network conditions and
+            server responsiveness. Omitting this element also defaults to
+            3 seconds.
+          -->
+          <!--
+          <HandshakeTimeout value="3 seconds" />
+          -->
+          <!--
+        </SSLClientConfig>
+          -->
+
+        <!--
+          Access logger that logs all requests for this virtual host. The
+          rotate attribute may be used to rotate the log file. The value is
+          either "day", "week" or "month". If the value is "day" then on the
+          first logged message after midnight each day, the current log file
+          will be closed and renamed with a postfix date and a new log file is
+          opened with the file name given in the fileName attribute. If the
+          value is "week" then on the first logged message after midnight each
+          Saturday the log file is rotated. Likewise if the value is "month"
+          then on the first logged message in a new month the log file is
+          rotated. The current log file, that is, the file the server writes to
+          is *always* the file given in the fileName attribute.
+
+          The access logger is turned off by default to avoid creating large
+          log-files that are seldom read. To activate the access logger,
+          uncomment the entry below.
+        -->
+        <!--
+        <AccessLogger directory="logs" fileName="access.log" rotate="month" />
+        -->
+
+        <!--
+          Logger shared by all Contexts related to this virtual host. M/Monit
+          will log application specific entries to this file.
+        -->
+        <Logger directory="logs" fileName="mmonit.log" rotate="month"
+                timestamp="true" />
+
+        <!--
+          The Context element represents a web application, which is run within
+          a particular virtual host. A web application is a collection of
+          servlets, html documents, images and other resources put in a
+          directory structure with a standard layout.
+
+          The web application used to process each HTTP request is selected by
+          the Container based on matching the longest possible prefix of the
+          Request URI against the context path of each defined Context. Once
+          selected, that Context will select an appropriate servlet to process
+          the incoming request, according to the servlet mappings defined in
+          the web application deployment descriptor file (which MUST be located
+          at WEB-INF/web.xml within the web app's directory hierarchy).
+
+          You may define as many Context elements as you wish, nested within a
+          Host element. Each such Context MUST have a unique context path,
+          which is defined by the path attribute. In addition, you can define a
+          Context with a context path equal to a zero-length string. This
+          Context becomes the default web application for this virtual host,
+          and is used to process all requests that do not match any other
+          Context's context path.
+
+          M/Monit is bound to the default context and its path must remain ""
+          and cannot be changed. Likewise, the collector context path can also
+          not be changed. Please use a HTTP proxy in front of M/Monit if, for
+          some reasons, either of these paths must be changed.
+
+          Each Context utilize a Session Manager to manage HTTP sessions. The
+          maxActiveSessions attribute specify the maximum number of active
+          sessions (i.e. sessions joined by clients) that will be created for
+          the Context. The manager expire idle sessions after sessionTimeout
+          seconds. Note that sessions are not enabled unless maxActiveSessions
+          is defined and set to a positive value. To enable persistent
+          Sessions, set the saveSessions attribute to "true". This tell M/Monit
+          to store and load Sessions from the Realm database at server start
+          and stop. That is, Sessions are persistent between server restart
+        -->
+        <!-- The Default Context -->
+        <Context path="" docBase="docroot" sessionTimeout="30 min"
+                 maxActiveSessions="1024" saveSessions="true" />
+
+        <!--
+          The Collector is defined in its own Context so it can be protected
+          with Basic Authentication
+         -->
+        <Context path="/collector" docBase="docroot/collector" />
+
+      </Host>
+
+    </Engine>
+  </Service>
+
+  <!--
+    The location of M/Monit's license file may be given as an absolute or
+    relative path. If relative, the absolute path is computed relative to
+    M/Monit's conf/ directory.
+   -->
+  <License file="license.xml" />
+
+</Server>
