@@ -14,7 +14,7 @@ ENV \
   TZ=UTC
 
 # copy config files
-COPY ./conf/* /opt/mmonit-${MMONIT_VERSION}/conf
+COPY ./conf/* /opt/mmonit-${MMONIT_VERSION}/conf/
 
 # install M/Monit
 RUN set -x\

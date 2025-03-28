@@ -1,4 +1,4 @@
-# Dockerized [Monit](https://mmonit.com/monit/) by Apptie Software
+# Dockerized [M/Monit](https://mmonit.com/) by Apptie Software
 
 ## Summary
 
