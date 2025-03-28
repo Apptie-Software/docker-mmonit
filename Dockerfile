@@ -31,7 +31,7 @@ RUN set -x\
   && cd /tmp \
   && wget "https://mmonit.com/dist/mmonit-${MMONIT_VERSION}-${MMONIT_OS}-${MMONIT_ARCH}.tar.gz" \
   && tar -zxvf "mmonit-${MMONIT_VERSION}-${MMONIT_OS}-${MMONIT_ARCH}.tar.gz" \
-  && cp -r "mmonit-${MMONIT_VERSION}-${MMONIT_OS}-${MMONIT_ARCH}/*" "/opt/" \
+  && cp -r "mmonit-${MMONIT_VERSION}" "/opt/" \
   && cd \
   && rm -rf /tmp/* \
   && apk del mybuild
