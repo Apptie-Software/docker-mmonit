@@ -42,4 +42,4 @@ VOLUME /opt/mmonit-${MMONIT_VERSION}/conf
 
 HEALTHCHECK --start-period=300s --interval=30s --timeout=30s --retries=3 CMD ["ping", "localhost:8080"] || exit 1
 
-CMD ["/opt/mmonit-${MMONIT_VERSION}/bin/mmonit", "-i"]
+CMD ["/opt/mmonit-4.3.4/bin/mmonit", "-i"]
