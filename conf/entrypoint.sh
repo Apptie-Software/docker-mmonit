@@ -17,7 +17,7 @@ serverxmltext="
 <?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <Server>
   <Service>
-    <Connector address=\"*\" port=\"${MMONIT_PORT}\" processors=\"25\" />
+    <Connector address=\"*\" port=\"${MMONIT_PORT}\" proxyScheme=\"https\" proxyName=\"${MMONIT_DOMAIN}\" proxyPort=\"443\" processors=\"25\" />
     <Engine name=\"mmonit\" defaultHost=\"${MMONIT_DOMAIN}\" fileCache=\"10 MB\">
       <Realm url=\"${MMONIT_DATABASE_URL}\"
            minConnections=\"5\"
