@@ -13,9 +13,6 @@ ENV \
   MMONIT_LICENSE_KEY="yours" \
   TZ=UTC
 
-# copy config files
-COPY ./conf/* /opt/mmonit-${MMONIT_VERSION}/conf/
-
 # install M/Monit
 RUN set -x\
   && apk add --no-cache --virtual mybuild \
@@ -31,15 +28,24 @@ RUN set -x\
   && cd /tmp \
   && wget "https://mmonit.com/dist/mmonit-${MMONIT_VERSION}-${MMONIT_OS}-${MMONIT_ARCH}.tar.gz" \
   && tar -zxvf "mmonit-${MMONIT_VERSION}-${MMONIT_OS}-${MMONIT_ARCH}.tar.gz" \
-  && cp -r "mmonit-${MMONIT_VERSION}" "/opt/" \
+  && ls \
+  && cp -r "mmonit-${MMONIT_VERSION}" "/opt/mmonit" \
   && cd \
+  && ls -alths "/opt/" \
+  && ls -alths "/opt/mmonit" \
+  && ls -alths "/opt/mmonit/conf" \
   && rm -rf /tmp/* \
   && apk del mybuild
 
 EXPOSE ${MMONIT_PORT}
 
-VOLUME /opt/mmonit-${MMONIT_VERSION}/conf
+# copy config files
+COPY ./conf/* /opt/mmonit/conf/
+
+VOLUME /opt/mmonit/conf
 
 HEALTHCHECK --start-period=300s --interval=30s --timeout=30s --retries=3 CMD ["ping", "localhost:8080"] || exit 1
 
-CMD ["/opt/mmonit-4.3.4/bin/mmonit", "-i"]
+ENTRYPOINT ["/opt/mmonit/conf/entrypoint.sh"]
+
+CMD ["/opt/mmonit/bin/mmonit", "-i"]
